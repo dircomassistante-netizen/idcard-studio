@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ID Card Generator — Personnel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #f0f0ff;
+    --text-muted: #7070a0;
+    --card-bg: linear-gradient(135deg, #1e1e32 0%, #12122a 100%);
+    --gold: #f7c948;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRAIN TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* AMBIENT GLOW */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb.one { width: 500px; height: 500px; background: rgba(108,99,255,0.12); top: -100px; left: -100px; }
+  .glow-orb.two { width: 400px; height: 400px; background: rgba(255,101,132,0.08); bottom: 0; right: -100px; }
+
+  .app-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 3rem;
+    background: rgba(18,18,26,0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .header-badge {
+    background: rgba(108,99,255,0.15);
+    border: 1px solid rgba(108,99,255,0.3);
+    color: var(--accent);
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* MAIN LAYOUT */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.8rem;
+    position: sticky;
+    top: 2rem;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* STEPS */
+  .steps {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .step-btn {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .step-btn.active {
+    background: rgba(108,99,255,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.05);
+  }
+
+  .upload-zone input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .upload-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .upload-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .upload-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .upload-sub code {
+    background: rgba(108,99,255,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 0.75rem;
+  }
+
+  /* FORM */
+  .form-row {
+    margin-bottom: 1.2rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  input[type=text], input[type=color], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  input[type=text]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .color-row {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .color-item {
+    flex: 1;
+  }
+
+  input[type=color] {
+    height: 42px;
+    padding: 4px 6px;
+    cursor: pointer;
+  }
+
+  /* LOGO UPLOAD */
+  .logo-upload-box {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .logo-upload-box:hover { border-color: var(--accent); }
+  .logo-upload-box input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+  #logoPreview {
+    max-height: 50px;
+    object-fit: contain;
+    display: none;
+    margin: 0 auto;
+  }
+
+  /* BTN */
+  .btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #9c5fff);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(108,99,255,0.35);
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    margin-top: 0.8rem;
+  }
+
+  .btn-secondary:hover {
+    background: var(--border);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    color: #0a0a0f;
+    margin-top: 0.8rem;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(67,233,123,0.3);
+  }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 2rem; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+  }
+
+  .stat-icon.purple { background: rgba(108,99,255,0.15); }
+  .stat-icon.pink   { background: rgba(255,101,132,0.15); }
+  .stat-icon.green  { background: rgba(67,233,123,0.15); }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* CARD GRID */
+  .cards-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .cards-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .filter-input {
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    outline: none;
+    width: 200px;
+  }
+
+  .filter-input:focus { border-color: var(--accent); }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* ID CARD */
+  .id-card-wrapper {
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+
+  .id-card-wrapper:hover { transform: translateY(-4px); }
+
+  .id-card {
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 1.585;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .card-header-band {
+    height: 40%;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 12px 16px;
+  }
+
+  .card-org-logo {
+    height: 28px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  .card-org-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    position: relative;
+  }
+
+  .card-photo {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    background: #2a2a3e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+
+  .card-role {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-dept {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-id-number {
+    position: absolute;
+    bottom: 8px;
+    right: 14px;
+    font-size: 0.65rem;
+    opacity: 0.4;
+    font-family: monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .card-stripe {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 8px;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  .empty-state-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: none;
+    place-items: center;
+  }
+
+  .modal-overlay.open { display: grid; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn 0.3s ease;
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.95) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+  }
+
+  .modal-close {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    transition: background 0.2s;
+  }
+
+  .modal-close:hover { background: var(--border); }
+
+  /* LARGE CARD PREVIEW IN MODAL */
+  .card-preview-large {
+    width: 100%;
+    aspect-ratio: 1.585;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .detail-item label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .detail-item p {
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+  }
+
+  /* NOTIFICATION */
+  .notif {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2000;
+    animation: notifIn 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .notif.show { transform: translateY(0); opacity: 1; }
+  .notif-icon { font-size: 1.2rem; }
+  .notif-text { font-size: 0.9rem; font-weight: 500; }
+
+  /* TEMPLATE SELECTOR */
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .template-item {
+    border-radius: 10px;
+    aspect-ratio: 1.585;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .template-item.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(108,99,255,0.2);
+  }
+
+  .template-label {
+    position: absolute;
+    bottom: 4px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+
+  .sep {
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* TABS IN PANEL */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 100px;
+    height: 6px;
+    margin-top: 1rem;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    width: 0;
+    transition: width 0.3s;
+  }
+
+  /* PHOTO UPLOAD per card */
+  .photo-upload-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .photo-thumb {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .panel { position: static; }
+    .stats-bar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb one"></div>
+<div class="glow-orb two"></div>
+
+<div class="app-wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🪪</div>
+      <div class="logo-text">ID<span>Card</span> Studio</div>
+    </div>
+    <span class="header-badge">✦ Générateur Pro</span>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- LEFT PANEL -->
+    <div class="panel">
+      <div class="panel-title">Configuration</div>
+
+      <div class="steps">
+        <button class="step-btn active" onclick="showTab('tab-import')">① Import</button>
+        <button class="step-btn" onclick="showTab('tab-design')">② Design</button>
+        <button class="step-btn" onclick="showTab('tab-org')">③ Organisation</button>
+      </div>
+
+      <!-- TAB IMPORT -->
+      <div id="tab-import" class="tab-content active">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+          <span class="upload-icon">📂</span>
+          <div class="upload-title">Glisser votre liste de personnel</div>
+          <div class="upload-sub">
+            Fichier <code>.CSV</code> ou <code>.XLSX</code> accepté<br>
+            <small style="margin-top:6px;display:block">Colonnes : Nom, Prénom, Poste, Département, ID (optionnel), Email</small>
+          </div>
+        </div>
+        <div class="progress-bar-wrap" id="progressWrap">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="form-row">
+          <label>Ou ajouter manuellement</label>
+          <button class="btn btn-secondary" onclick="addManually()">＋ Ajouter un employé</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.7;">
+          <strong style="color:var(--text)">Format CSV attendu :</strong><br>
+          <code style="background:rgba(108,99,255,0.1);padding:8px 12px;border-radius:8px;display:block;margin-top:6px;color:var(--accent);font-size:0.75rem;line-height:2">
+            Nom,Prénom,Poste,Département,ID,Email
+          </code>
+        </div>
+      </div>
+
+      <!-- TAB DESIGN -->
+      <div id="tab-design" class="tab-content">
+        <div class="form-row">
+          <label>Modèle de carte</label>
+          <div class="template-grid" id="templateGrid">
+            <div class="template-item selected" data-tpl="corporate" onclick="selectTemplate(this,'corporate')">
+              <div style="height:100%;background:linear-gradient(135deg,#6c63ff,#3a3a7c);"></div>
+              <div class="template-label">Corporate</div>
+            </div>
+            <div class="template-item" data-tpl="midnight" onclick="selectTemplate(this,'midnight')">
+              <div style="height:100%;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);"></div>
+              <div class="template-label">Midnight</div>
+            </div>
+            <div class="template-item" data-tpl="ember" onclick="selectTemplate(this,'ember')">
+              <div style="height:100%;background:linear-gradient(135deg,#eb3349,#f45c43);"></div>
+              <div class="template-label">Ember</div>
+            </div>
+            <div class="template-item" data-tpl="forest" onclick="selectTemplate(this,'forest')">
+              <div style="height:100%;background:linear-gradient(135deg,#134e5e,#71b280);"></div>
+              <div class="template-label">Forest</div>
+            </div>
+            <div class="template-item" data-tpl="gold" onclick="selectTemplate(this,'gold')">
+              <div style="height:100%;background:linear-gradient(135deg,#f7971e,#ffd200);"></div>
+              <div class="template-label">Gold</div>
+            </div>
+            <div class="template-item" data-tpl="ocean" onclick="selectTemplate(this,'ocean')">
+              <div style="height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);"></div>
+              <div class="template-label">Ocean</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Couleurs personnalisées</label>
+          <div class="color-row">
+            <div class="color-item">
+              <label>Primaire</label>
+              <input type="color" id="colorPrimary" value="#6c63ff" oninput="updatePreviewColors()">
+            </div>
+            <div class="color-item">
+              <label>Secondaire</label>
+              <input type="color" id="colorSecondary" value="#9c5fff" oninput="updatePreviewColors()">
+            </div>
+            <div class="color-item">
+              <label>Texte</label>
+              <input type="color" id="colorText" value="#ffffff" oninput="updatePreviewColors()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB ORG -->
+      <div id="tab-org" class="tab-content">
+        <div class="form-row">
+          <label>Nom de l'organisation</label>
+          <input type="text" id="orgName" value="Mon Organisation" oninput="refreshCards()">
+        </div>
+        <div class="form-row">
+          <label>Logo de l'organisation</label>
+          <div class="logo-upload-box">
+            <input type="file" accept="image/*" onchange="loadOrgLogo(this)">
+            <img id="logoPreview" src="" alt="Logo">
+            <div id="logoPlaceholder" style="color:var(--text-muted);font-size:0.85rem;">
+              📤 Cliquer pour uploader un logo
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Titre sur la carte</label>
+          <input type="text" id="cardTitle" value="CARTE D'IDENTITÉ PROFESSIONNELLE" oninput="refreshCards()">
+        </div>
+        <div class="form-row">
+          <label>Afficher QR Code</label>
+          <select id="showQR" onchange="refreshCards()">
+            <option value="no">Non</option>
+            <option value="yes">Oui (Email)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <button class="btn btn-primary" onclick="generateAll()">
+        ⚡ Générer toutes les cartes
+      </button>
+      <button class="btn btn-success" onclick="downloadAll()" id="downloadBtn" style="display:none">
+        ⬇ Télécharger tout (ZIP)
+      </button>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- STATS -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-icon purple">👥</div>
+          <div>
+            <div class="stat-num" id="statTotal">0</div>
+            <div class="stat-label">Employés</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div>
+            <div class="stat-num" id="statGenerated">0</div>
+            <div class="stat-label">Cartes générées</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon pink">🏢</div>
+          <div>
+            <div class="stat-num" id="statDepts">0</div>
+            <div class="stat-label">Départements</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARDS -->
+      <div>
+        <div class="cards-header">
+          <div class="cards-title">Aperçu des cartes</div>
+          <input class="filter-input" type="text" placeholder="🔍 Filtrer par nom..." oninput="filterCards(this.value)">
+        </div>
+        <div class="cards-grid" id="cardsGrid">
+          <div class="empty-state">
+            <div class="empty-state-icon">🪪</div>
+            <div class="empty-state-title">Aucun personnel chargé</div>
+            <div style="font-size:0.85rem;line-height:1.6;max-width:300px;margin:0 auto">
+              Importez votre liste CSV/Excel ou ajoutez des employés manuellement pour commencer.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DÉTAIL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Détail de la carte</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="card-preview-large" id="modalCardPreview"></div>
+    <div class="detail-grid" id="modalDetails"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="downloadSingle()">⬇ Télécharger</button>
+      <button class="btn btn-secondary" onclick="editEmployee()">✏️ Modifier</button>
+      <button class="btn" style="background:rgba(255,101,132,0.15);border:1px solid rgba(255,101,132,0.3);color:#ff6584" onclick="deleteEmployee()">🗑 Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif">
+  <span class="notif-icon" id="notifIcon">✅</span>
+  <span class="notif-text" id="notifText">Action effectuée</span>
+</div>
+
+<!-- MODAL AJOUT MANUEL -->
+<div class="modal-overlay" id="addModal" onclick="closeAddModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Ajouter un employé</div>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-row"><label>Prénom</label><input type="text" id="addPrenom" placeholder="Jean"></div>
+      <div class="form-row"><label>Nom</label><input type="text" id="addNom" placeholder="DUPONT"></div>
+      <div class="form-row"><label>Poste</label><input type="text" id="addPoste" placeholder="Ingénieur"></div>
+      <div class="form-row"><label>Département</label><input type="text" id="addDept" placeholder="Informatique"></div>
+      <div class="form-row"><label>Email</label><input type="text" id="addEmail" placeholder="j.dupont@org.com"></div>
+      <div class="form-row"><label>ID</label><input type="text" id="addId" placeholder="EMP-001"></div>
+    </div>
+    <div class="form-row">
+      <label>Photo (optionnel)</label>
+      <input type="file" accept="image/*" id="addPhoto" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px">
+    </div>
+    <div class="modal-actions" style="margin-top:1.5rem">
+      <button class="btn btn-primary" onclick="confirmAdd()">✔ Ajouter</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('open')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+// ==================== STATE ====================
+let employees = [];
+let orgLogoSrc = null;
+let selectedEmployee = null;
+let selectedEmployeeIndex = -1;
+let currentTemplate = 'corporate';
+
+const TEMPLATES = {
+  corporate: { g1: '#6c63ff', g2: '#3a3a7c', text: '#ffffff', stripe: '#ff6584' },
+  midnight:  { g1: '#0f0c29', g2: '#302b63', text: '#ffffff', stripe: '#f7c948' },
+  ember:     { g1: '#eb3349', g2: '#f45c43', text: '#ffffff', stripe: '#ffd200' },
+  forest:    { g1: '#134e5e', g2: '#71b280', text: '#ffffff', stripe: '#f7c948' },
+  gold:      { g1: '#f7971e', g2: '#ffd200', text: '#1a1a1a', stripe: '#eb3349' },
+  ocean:     { g1: '#1a1a2e', g2: '#0f3460', text: '#ffffff', stripe: '#43e97b' },
+};
+
+// ==================== TABS ====================
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['tab-import','tab-design','tab-org'].indexOf(id);
+  document.querySelectorAll('.step-btn')[idx].classList.add('active');
+}
+
+// ==================== FILE IMPORT ====================
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  if(e.target.files[0]) processFile(e.target.files[0]);
+});
+
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else if(['xlsx','xls'].includes(ext)) {
+    showNotif('⚠️', 'Format XLSX: utilisez un CSV pour l\'import direct. Export depuis Excel: Fichier → Enregistrer sous → CSV');
+    // Simplified: Try to read as text
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  if(lines.length < 2) { showNotif('❌', 'Fichier vide ou format invalide'); return; }
+
+  // Detect separator
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+
+  const map = {};
+  const aliasMap = {
+    nom:['nom','name','last name','lastname','last_name','famille'],
+    prenom:['prénom','prenom','first name','firstname','first_name'],
+    poste:['poste','post','title','titre','fonction','role','position'],
+    dept:['département','departement','department','dept','service','division'],
+    id:['id','matricule','employee id','employeeid','ref'],
+    email:['email','mail','courriel','e-mail'],
+    photo:['photo','image','avatar','pic']
+  };
+
+  headers.forEach((h, i) => {
+    for(const [key, aliases] of Object.entries(aliasMap)) {
+      if(aliases.some(a => h.includes(a))) { map[key] = i; break; }
+    }
+  });
+
+  const parsed = [];
+  for(let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(sep).map(c => c.trim().replace(/^["']|["']$/g,''));
+    if(cols.length < 2) continue;
+    const emp = {
+      nom:    cols[map.nom ?? 0] || '',
+      prenom: cols[map.prenom ?? 1] || '',
+      poste:  cols[map.poste ?? 2] || '',
+      dept:   cols[map.dept ?? 3] || '',
+      id:     cols[map.id ?? 4] || `EMP-${String(i).padStart(3,'0')}`,
+      email:  cols[map.email ?? 5] || '',
+      photo:  null
+    };
+    if(emp.nom || emp.prenom) parsed.push(emp);
+  }
+
+  if(!parsed.length) { showNotif('❌', 'Aucun employé trouvé. Vérifiez le format.'); return; }
+
+  employees = parsed;
+  updateStats();
+  renderCards();
+  showNotif('✅', `${parsed.length} employés importés avec succès !`);
+  document.getElementById('downloadBtn').style.display = 'flex';
+}
+
+// ==================== MANUAL ADD ====================
+function addManually() {
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('addPrenom').focus();
+}
+
+function closeAddModal(e) {
+  if(e.target === document.getElementById('addModal')) document.getElementById('addModal').classList.remove('open');
+}
+
+function confirmAdd() {
+  const emp = {
+    prenom: document.getElementById('addPrenom').value.trim(),
+    nom:    document.getElementById('addNom').value.trim(),
+    poste:  document.getElementById('addPoste').value.trim(),
+    dept:   document.getElementById('addDept').value.trim(),
+    email:  document.getElementById('addEmail').value.trim(),
+    id:     document.getElementById('addId').value.trim() || `EMP-${String(employees.length+1).padStart(3,'0')}`,
+    photo:  null
+  };
+  const photoFile = document.getElementById('addPhoto').files[0];
+  if(photoFile) {
+    const reader = new FileReader();
+    reader.onload = e => { emp.photo = e.target.result; employees.push(emp); finishAdd(); };
+    reader.readAsDataURL(photoFile);
+  } else {
+    employees.push(emp);
+    finishAdd();
+  }
+}
+
+function finishAdd() {
+  document.getElementById('addModal').classList.remove('open');
+  updateStats(); renderCards();
+  showNotif('✅', 'Employé ajouté !');
+  document.getElementById('downloadBtn').style.display = 'flex';
+}
+
+// ==================== STATS ====================
+function updateStats() {
+  document.getElementById('statTotal').textContent = employees.length;
+  document.getElementById('statGenerated').textContent = employees.length;
+  const depts = new Set(employees.map(e => e.dept).filter(Boolean));
+  document.getElementById('statDepts').textContent = depts.size || 0;
+}
+
+// ==================== TEMPLATE ====================
+function selectTemplate(el, tpl) {
+  document.querySelectorAll('.template-item').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  currentTemplate = tpl;
+  const t = TEMPLATES[tpl];
+  document.getElementById('colorPrimary').value = t.g1;
+  document.getElementById('colorSecondary').value = t.g2;
+  document.getElementById('colorText').value = t.text;
+  refreshCards();
+}
+
+function updatePreviewColors() {
+  refreshCards();
+}
+
+function getColors() {
+  return {
+    g1:    document.getElementById('colorPrimary').value,
+    g2:    document.getElementById('colorSecondary').value,
+    text:  document.getElementById('colorText').value,
+    stripe: TEMPLATES[currentTemplate]?.stripe || '#ff6584'
+  };
+}
+
+// ==================== RENDER CARDS ====================
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  if(!employees.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🪪</div><div class="empty-state-title">Aucun personnel chargé</div><div style="font-size:.85rem;color:var(--text-muted)">Importez votre liste pour commencer</div></div>`;
+    return;
+  }
+  grid.innerHTML = employees.map((emp, i) => buildCardHTML(emp, i, false)).join('');
+}
+
+function refreshCards() { if(employees.length) renderCards(); }
+
+function buildCardHTML(emp, idx, large) {
+  const c = getColors();
+  const orgName = document.getElementById('orgName')?.value || 'Organisation';
+  const textColor = c.text;
+  const fullName = `${emp.prenom} ${emp.nom}`.trim();
+  const initials = `${(emp.prenom||'?')[0]}${(emp.nom||'?')[0]}`.toUpperCase();
+  const photoEl = emp.photo
+    ? `<img src="${emp.photo}" style="width:100%;height:100%;object-fit:cover;" />`
+    : `<span style="color:rgba(255,255,255,0.6);font-size:${large?'2rem':'1.5rem'}">${initials}</span>`;
+
+  const logoEl = orgLogoSrc
+    ? `<img src="${orgLogoSrc}" class="card-org-logo" style="height:${large?'36px':'24px'}">`
+    : `<span class="card-org-name" style="font-size:${large?'1rem':'0.75rem'}">${orgName}</span>`;
+
+  const card = `
+    <div class="id-card" id="${large?'':'card-'+idx}" style="background:linear-gradient(135deg,${c.g1},${c.g2});color:${textColor};" ${!large?`onclick="openModal(${idx})" style="cursor:pointer;"`:''}>
+      <div class="card-header-band" style="background:rgba(0,0,0,0.2)">
+        ${logoEl}
+      </div>
+      <div class="card-body">
+        <div class="card-photo" style="background:rgba(255,255,255,0.15);">${photoEl}</div>
+        <div class="card-info">
+          <div class="card-name" style="color:${textColor};font-size:${large?'1.3rem':'0.95rem'}">${fullName || 'Nom Prénom'}</div>
+          <div class="card-role" style="color:${textColor}">${emp.poste || '—'}</div>
+          <div class="card-dept" style="color:${textColor}">${emp.dept || '—'}</div>
+        </div>
+      </div>
+      <div class="card-id-number" style="color:${textColor}">${emp.id}</div>
+      <div class="card-stripe" style="background:${c.stripe}"></div>
+    </div>`;
+
+  if(large) return card;
+
+  return `<div class="id-card-wrapper">${card}</div>`;
+}
+
+// ==================== MODAL ====================
+function openModal(idx) {
+  selectedEmployee = employees[idx];
+  selectedEmployeeIndex = idx;
+  const overlay = document.getElementById('modalOverlay');
+  const preview = document.getElementById('modalCardPreview');
+  const details = document.getElementById('modalDetails');
+
+  preview.innerHTML = buildCardHTML(selectedEmployee, idx, true);
+
+  const emp = selectedEmployee;
+  details.innerHTML = `
+    <div class="detail-item"><label>Nom complet</label><p>${emp.prenom} ${emp.nom}</p></div>
+    <div class="detail-item"><label>Matricule</label><p>${emp.id}</p></div>
+    <div class="detail-item"><label>Poste</label><p>${emp.poste || '—'}</p></div>
+    <div class="detail-item"><label>Département</label><p>${emp.dept || '—'}</p></div>
+    <div class="detail-item"><label>Email</label><p>${emp.email || '—'}</p></div>
+  `;
+  overlay.classList.add('open');
+}
+
+function closeModal(e) {
+  if(e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function deleteEmployee() {
+  if(selectedEmployeeIndex >= 0) {
+    employees.splice(selectedEmployeeIndex, 1);
+    closeModalDirect();
+    updateStats(); renderCards();
+    showNotif('🗑', 'Employé supprimé');
+  }
+}
+
+function editEmployee() {
+  if(!selectedEmployee) return;
+  closeModalDirect();
+  // Pre-fill manual form
+  document.getElementById('addPrenom').value = selectedEmployee.prenom || '';
+  document.getElementById('addNom').value    = selectedEmployee.nom || '';
+  document.getElementById('addPoste').value  = selectedEmployee.poste || '';
+  document.getElementById('addDept').value   = selectedEmployee.dept || '';
+  document.getElementById('addEmail').value  = selectedEmployee.email || '';
+  document.getElementById('addId').value     = selectedEmployee.id || '';
+  // Remove the original and re-add on confirm
+  employees.splice(selectedEmployeeIndex, 1);
+  document.getElementById('addModal').classList.add('open');
+}
+
+// ==================== GENERATE ====================
+function generateAll() {
+  if(!employees.length) { showNotif('⚠️', 'Aucun employé à générer'); return; }
+  showTab('tab-org');
+  renderCards();
+  updateStats();
+  showNotif('✅', `${employees.length} cartes générées !`);
+  document.getElementById('downloadBtn').style.display = 'flex';
+}
+
+// ==================== DOWNLOAD SINGLE ====================
+async function downloadSingle() {
+  if(!selectedEmployee) return;
+  const cardEl = document.getElementById('modalCardPreview').firstElementChild;
+  if(!cardEl) return;
+  showNotif('⏳', 'Génération en cours...');
+  try {
+    const canvas = await html2canvas(cardEl, {scale:3, backgroundColor:null, useCORS:true});
+    canvas.toBlob(blob => {
+      saveAs(blob, `carte_${selectedEmployee.prenom}_${selectedEmployee.nom}.png`);
+      showNotif('✅', 'Carte téléchargée !');
+    });
+  } catch(e) {
+    showNotif('❌', 'Erreur de génération');
+  }
+}
+
+// ==================== DOWNLOAD ALL ====================
+async function downloadAll() {
+  if(!employees.length) return;
+  showNotif('⏳', `Export de ${employees.length} cartes...`);
+
+  const zip = new JSZip();
+  const folder = zip.folder('cartes_id');
+
+  // Create a hidden container
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  document.body.appendChild(container);
+
+  for(let i = 0; i < employees.length; i++) {
+    const emp = employees[i];
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'width:350px;height:221px;';
+    wrap.innerHTML = buildCardHTML(emp, i, true);
+    container.appendChild(wrap);
+    const cardEl = wrap.firstElementChild;
+    try {
+      const canvas = await html2canvas(cardEl, {scale:2, backgroundColor:null, useCORS:true});
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1];
+      folder.file(`carte_${emp.prenom}_${emp.nom}_${emp.id}.png`, base64, {base64:true});
+    } catch(e) { /* skip */ }
+    wrap.remove();
+  }
+
+  document.body.removeChild(container);
+
+  zip.generateAsync({type:'blob'}).then(blob => {
+    saveAs(blob, 'cartes_identite_personnel.zip');
+    showNotif('✅', 'Archive ZIP téléchargée !');
+  });
+}
+
+// ==================== FILTER ====================
+function filterCards(val) {
+  const q = val.toLowerCase();
+  document.querySelectorAll('.id-card-wrapper').forEach((w, i) => {
+    const emp = employees[i];
+    if(!emp) return;
+    const match = `${emp.nom} ${emp.prenom} ${emp.poste} ${emp.dept}`.toLowerCase().includes(q);
+    w.style.display = match ? '' : 'none';
+  });
+}
+
+// ==================== LOGO ====================
+function loadOrgLogo(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    orgLogoSrc = e.target.result;
+    const img = document.getElementById('logoPreview');
+    img.src = orgLogoSrc;
+    img.style.display = 'block';
+    document.getElementById('logoPlaceholder').style.display = 'none';
+    refreshCards();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ==================== NOTIFICATION ====================
+let notifTimer;
+function showNotif(icon, text) {
+  const el = document.getElementById('notif');
+  document.getElementById('notifIcon').textContent = icon;
+  document.getElementById('notifText').textContent = text;
+  el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ==================== DEMO DATA ====================
+function loadDemo() {
+  employees = [
+    {nom:'DIALLO',prenom:'Amadou',poste:'Directeur Général',dept:'Direction',id:'EMP-001',email:'a.diallo@org.sn',photo:null},
+    {nom:'NDIAYE',prenom:'Fatou',poste:'DRH',dept:'Ressources Humaines',id:'EMP-002',email:'f.ndiaye@org.sn',photo:null},
+    {nom:'BA',prenom:'Moussa',poste:'Ingénieur Senior',dept:'Informatique',id:'EMP-003',email:'m.ba@org.sn',photo:null},
+    {nom:'FALL',prenom:'Awa',poste:'Comptable',dept:'Finance',id:'EMP-004',email:'a.fall@org.sn',photo:null},
+    {nom:'SECK',prenom:'Ibrahima',poste:'Chargé Marketing',dept:'Marketing',id:'EMP-005',email:'i.seck@org.sn',photo:null},
+    {nom:'TRAORÉ',prenom:'Mariama',poste:'Juriste',dept:'Juridique',id:'EMP-006',email:'m.traore@org.sn',photo:null},
+  ];
+  updateStats(); renderCards();
+  document.getElementById('downloadBtn').style.display = 'flex';
+  showNotif('🎉', '6 employés de démonstration chargés !');
+}
+
+// Auto-load demo
+loadDemo();
+</script>
+</body>
+</html>
